@@ -15,7 +15,7 @@ From the terminal run one of the options:<br>
 ``cmake ..``<br>
 - After that cmake will generate a Makefile in build/ directory,from build/ directory run:<br>
  ``make``<br>
-## Run
+### Run
 - From the 'build/' directory run:<br>
 ``./main.o``
 - Input from terminal the full path for model
