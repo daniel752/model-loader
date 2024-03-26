@@ -1,0 +1,3 @@
+/home/daniel/model-loader/build/CMakeFiles/main.o.dir
+/home/daniel/model-loader/build/CMakeFiles/edit_cache.dir
+/home/daniel/model-loader/build/CMakeFiles/rebuild_cache.dir
