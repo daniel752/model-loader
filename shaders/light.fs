@@ -1,4 +1,4 @@
-#version 330 core
+#version 420 core
 
 #define NUM_LIGHT_POINTS 5
 

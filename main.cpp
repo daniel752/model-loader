@@ -113,6 +113,9 @@ float quadratic = QUADRATIC;
 float lightIntensity = 0.5f;
 float lightAlpha = 1.0f;
 
+bool showingNormals = false;
+bool isPolygonMode = false;
+
 glm::vec4 backgroundColor = DEFAULT_BACKGROUND_COLOR;
 glm::vec3 lightColor = DEFAULT_LIGHT_COLOR;
 
@@ -140,6 +143,10 @@ glm::vec3 colors[] =
 
 int main()
 {
+    // Get input from use (model path)
+    std::cout << "Input model's path:\n";
+    std::cin >> modelPath;
+
     // Create window object
     glWindow window(title, width, height);
 
@@ -158,20 +165,22 @@ int main()
     // -------------------------
     Shader meshShader(meshVShaderPath.c_str(), meshFShaderPath.c_str());
     Shader lightShader(lightVShaderPath.c_str(), lightFShaderPath.c_str());
+    Shader normalVisual((pwd + "/../shaders/normalVisualization.vs").c_str(), (pwd + "/../shaders/normalVisualization.fs").c_str(), (pwd + "/../shaders/normalVisualization.gs").c_str());
 
     Shader::enableDepth();
-
-    // Get input from use (model path)
-    std::cout << "Input model's path:\n";
-    std::cin >> modelPath;
 
     // Load models
     // -----------
     Model modelObj(modelPath.c_str());
-    // Model cube(cubePath.c_str());
 
-    // Uncomment to render models in wireframe
-    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    // Uniform buffer creation
+    // -----------------------
+    unsigned int uboMatrices;
+    glGenBuffers(1, &uboMatrices);
+    glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
+    glBufferData(GL_UNIFORM_BUFFER, 3 * sizeof(glm::mat4), nullptr, GL_STATIC_DRAW);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    glBindBufferRange(GL_UNIFORM_BUFFER, 0, uboMatrices, 0, 3 * sizeof(glm::mat4));
 
     // Render loop
     // -----------
@@ -185,6 +194,11 @@ int main()
         // ------------------------------------------------------------
         glClearColor(backgroundColor.x, backgroundColor.y, backgroundColor.z, backgroundColor.t);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        if(isPolygonMode)
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        else
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
         // Enabling our shader before using it's uniforms
         // ----------------------------------------------
@@ -222,10 +236,22 @@ int main()
         lightShader.setMatrix3fv("normalMatrix", 1, GL_TRUE, glm::mat3(glm::inverse(model)));
         lightShader.setMatrix4fv("model", 1, GL_FALSE, model);
 
+        // Filling uniform interface block with data
+        // -----------------------------------------
+        glBindBuffer(GL_UNIFORM_BUFFER, uboMatrices);
+        glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(model));
+        glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(view));
+        glBufferSubData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(projection));
+
         // Render model
         // ------------
         modelObj.draw(lightShader);
-        lightShader.unbind();
+        // lightShader.unbind();
+
+        normalVisual.use();
+        normalVisual.setBool("showingNormals", showingNormals);
+        normalVisual.setMatrix3fv("normalMat", 1, GL_TRUE, glm::inverse(view * model));
+        modelObj.draw(normalVisual);
 
         // Light cubes creation
         // --------------------
@@ -472,6 +498,16 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         constant = CONSTANT;
         linear = LINEAR;
         quadratic = QUADRATIC;
+    }
+
+    if(key == GLFW_KEY_Q && action == GLFW_PRESS)
+    {
+        isPolygonMode = !isPolygonMode;
+    }
+
+    if(key == GLFW_KEY_E && action == GLFW_PRESS)
+    {
+        showingNormals = !showingNormals;
     }
 
     // If user presses ESC key button - exit program

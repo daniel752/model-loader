@@ -2,9 +2,12 @@
 
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 aNormal;
-layout (location = 2) in vec2 aTexCoords;
 
-out vec2 texCoords;
+out VS_OUT
+{
+    vec3 normal;
+    mat4 projection;
+} vs_out;
 
 layout (std140, binding = 0) uniform Matrices
 {
@@ -13,8 +16,11 @@ layout (std140, binding = 0) uniform Matrices
     uniform mat4 projection;
 };
 
+uniform mat3 normalMat;
+
 void main()
 {
-    texCoords = aTexCoords;
-    gl_Position = projection * view * model * vec4(aPos, 1.0);
+    vs_out.projection = projection;
+    vs_out.normal = normalize(normalMat * aNormal);
+    gl_Position = view * model * vec4(aPos, 1.0);
 }
